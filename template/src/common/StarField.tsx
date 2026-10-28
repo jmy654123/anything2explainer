@@ -99,7 +99,7 @@ export const StarField: React.FC<Partial<StarFieldProps> & {frame?: number}> = (
 };
 
 /** 背景轨：按原片帧号查 BgSpec（后者优先），渲染 雾底 + 星点。N = 原片帧号。未覆写 → 默认 drift + 雾底开。 */
-export const BgTrack: React.FC<{specs: BgSpec[]; defaultStars?: Partial<StarFieldProps>; defaultFog?: boolean}> = ({specs, defaultStars, defaultFog = FOG_DEFAULT_ON}) => {
+export const BgTrack: React.FC<{specs: BgSpec[]; defaultStars?: Partial<StarFieldProps>; defaultFog?: boolean; fogFrom?: string; fogTo?: string}> = ({specs, defaultStars, defaultFog = FOG_DEFAULT_ON, fogFrom, fogTo}) => {
   const N = useCurrentFrame() + 1;
   let stars: Partial<StarFieldProps> = {...defaultStars};
   let fog = defaultFog;
@@ -110,7 +110,7 @@ export const BgTrack: React.FC<{specs: BgSpec[]; defaultStars?: Partial<StarFiel
   }
   return (
     <>
-      {fog ? <Fog /> : null}
+      {fog ? <Fog from={fogFrom} to={fogTo} /> : null}
       <StarField {...stars} />
     </>
   );

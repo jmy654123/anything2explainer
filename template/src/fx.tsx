@@ -1,18 +1,18 @@
 import React from 'react';
 import {FONT_ORB} from './common/lib';
 import {clamp01, easeInOutPow} from './common';
-import {CText, PURPLE, PURPLE_LIGHT, WHITE, GLOW_PURPLE, abs} from './ui';
+import {CText, PRIMARY, PRIMARY_LIGHT, PRIMARY_DEEP, PURPLE, TEXT, LINE, DIM, PANEL, GLOW_HERO, RADIUS, TOKENS, IS_GLOW, FONT_NUM, glowPrimary, withAlpha, abs} from './ui';
 
 /**
- * 光效 / 高光时刻 / 纵深 / 运镜 图元（从样片《RAG 与知识库》各组辅助文件升级而来；规则见 reference/composition-and-light.md）。
+ * 光效 / 高光时刻 / 纵深 / 运镜 图元（从样片《RAG 与知识库》各组辅助文件升级而来；规则见 reference/`common-rules.md`）。
  * 镜头里 `import {…} from '../../fx'`。全部纯函数：动画量由镜头按 N 算好传入，或传 N/f0 让组件自己算相对帧。
  * 用途速查：
- *   LightBar / LightSweep  紫光条横扫（高光时刻开场，三轮）
+ *   LightBar / LightSweep  主色光条横扫（登场型高光时刻开场，三轮；全片 ≤2 处）
  *   StageLine              中央舞台光线：展宽 → 呼吸 → 节拍帧白闪 3 帧后消失
  *   GhostText              主角文字的白描边轮廓 10% 隐现（预示）
- *   HaloRing               主体脚下的紫色光环（外环内环白描边 + 紫渐变 + 虚线波纹），可分前后半环夹住主体
- *   HeroGlow               给任何矩形主角加双层紫柔光 + 30 帧呼吸
- *   BigNumber / countTo    大数字（Orbitron + 紫硬投影 + 白光），tabular，可计数
+ *   HaloRing               主体脚下的主色光环（外环内环描边 + 主色渐变 + 虚线波纹），可分前后半环夹住主体
+ *   HeroGlow               给任何矩形主角加双层主色柔光 + 30 帧呼吸
+ *   BigNumber / countTo    大数字（Orbitron + 主色硬投影 + 文字光），tabular，可计数
  *   Sparkle / GradBall     四角小星 / 顶亮底黑小球
  *   TiltPlane              倾斜平面（纵深层）
  *   CameraRig / camAt      定点推近 / 平移 / 整页滚动的相机（世界坐标 → 屏幕）
@@ -20,10 +20,10 @@ import {CText, PURPLE, PURPLE_LIGHT, WHITE, GLOW_PURPLE, abs} from './ui';
  */
 
 // ---- 紫光条 ----
-/** 单条光条：黑底上的紫色渐变条 + 紫外发光 + 白芯。alpha 为整体透明度。 */
-export const LightBar: React.FC<{x: number; y: number; w: number; h: number; alpha?: number; color?: string; core?: boolean}> = ({x, y, w, h, alpha = 0.3, color = PURPLE_LIGHT, core = true}) => (
+/** 单条光条：底色上的主色渐变条 + 同色外发光 + 亮芯。alpha 为整体透明度。 */
+export const LightBar: React.FC<{x: number; y: number; w: number; h: number; alpha?: number; color?: string; core?: boolean}> = ({x, y, w, h, alpha = 0.3, color = PRIMARY_LIGHT, core = true}) => (
   <div style={{...abs(x, y, w, h), opacity: alpha}}>
-    <div style={{position: 'absolute', inset: 0, borderRadius: h / 2, background: `linear-gradient(90deg, transparent 0%, ${color} 16%, ${color} 84%, transparent 100%)`, boxShadow: `0 0 ${h * 2.4}px ${h * 0.9}px rgba(102,45,248,.6)`}} />
+    <div style={{position: 'absolute', inset: 0, borderRadius: h / 2, background: `linear-gradient(90deg, transparent 0%, ${color} 16%, ${color} 84%, transparent 100%)`, boxShadow: `0 0 ${h * 2.4}px ${h * 0.9}px ${withAlpha(PRIMARY, 0.6)}`}} />
     {core ? <div style={{position: 'absolute', left: w * 0.18, right: w * 0.18, top: h * 0.3, height: h * 0.4, borderRadius: h, background: 'linear-gradient(90deg, transparent 0%, #FFFFFF 28%, #FFFFFF 72%, transparent 100%)', boxShadow: '0 0 6px 1px rgba(255,255,255,.75)'}} /> : null}
   </div>
 );
@@ -60,7 +60,7 @@ export const StageLine: React.FC<{N: number; f0: number; flashAt?: number; cx?: 
   const lineW = w * (1 - Math.pow(1 - clamp01(n / 14), 2.5));
   const breathe = 0.45 + 0.15 * Math.sin(n * 0.28);
   return (
-    <div style={{position: 'absolute', left: cx - lineW / 2, top: cy - h / 2, width: lineW, height: h, borderRadius: h, background: flash >= 0 ? WHITE : `linear-gradient(90deg, transparent, ${PURPLE_LIGHT} 20%, ${PURPLE_LIGHT} 80%, transparent)`, opacity: flash >= 0 ? [0.95, 0.7, 0.35][flash] : breathe, boxShadow: flash >= 0 ? '0 0 30px 8px rgba(255,255,255,.55)' : '0 0 18px 4px rgba(102,45,248,.5)'}} />
+    <div style={{position: 'absolute', left: cx - lineW / 2, top: cy - h / 2, width: lineW, height: h, borderRadius: h, background: flash >= 0 ? TEXT : `linear-gradient(90deg, transparent, ${PRIMARY_LIGHT} 20%, ${PRIMARY_LIGHT} 80%, transparent)`, opacity: flash >= 0 ? [0.95, 0.7, 0.35][flash] : breathe, boxShadow: flash >= 0 ? '0 0 30px 8px rgba(255,255,255,.55)' : `0 0 18px 4px ${withAlpha(PRIMARY, 0.5)}`}} />
   );
 };
 
@@ -69,7 +69,7 @@ export const StageLine: React.FC<{N: number; f0: number; flashAt?: number; cx?: 
 export const GhostText: React.FC<{cx: number; cy: number; size: number; family?: string; weight?: number; letterSpacing?: number; opacity: number; dy?: number; scaleX?: number; children: React.ReactNode}> = ({cx, cy, size, family, weight = 400, letterSpacing = 8, opacity, dy = -4, scaleX = 1, children}) => {
   if (opacity <= 0) return null;
   return (
-    <CText cx={cx} cy={cy} size={size} weight={weight} family={family} letterSpacing={letterSpacing} color="transparent" dy={dy} scaleX={scaleX} opacity={opacity} shadow="0 0 22px rgba(161,117,241,.95)" style={{WebkitTextStroke: `2px ${WHITE}`}}>
+    <CText cx={cx} cy={cy} size={size} weight={weight} family={family} letterSpacing={letterSpacing} color="transparent" dy={dy} scaleX={scaleX} opacity={opacity} shadow={`0 0 22px ${withAlpha(PRIMARY_LIGHT, 0.95)}`} style={{WebkitTextStroke: `2px ${LINE}`}}>
       {children}
     </CText>
   );
@@ -101,19 +101,19 @@ export const HaloRing: React.FC<{cx?: number; cy?: number; rxo?: number; ryo?: n
     <svg width={1280} height={720} viewBox="0 0 1280 720" style={{position: 'absolute', left: 0, top: 0, overflow: 'visible', filter: 'drop-shadow(0 0 3px rgba(255,255,255,0.45))', opacity}}>
       <defs>
         <linearGradient id={`${id}-g`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#3A1E8C" />
-          <stop offset="55%" stopColor={PURPLE} />
-          <stop offset="100%" stopColor="#8F62F5" />
+          <stop offset="0%" stopColor={PRIMARY_DEEP} />
+          <stop offset="55%" stopColor={PRIMARY} />
+          <stop offset="100%" stopColor={PRIMARY_LIGHT} />
         </linearGradient>
         <clipPath id={`${id}-back`}><rect x={0} y={0} width={1280} height={cy} /></clipPath>
         <clipPath id={`${id}-front`}><rect x={0} y={cy} width={1280} height={720 - cy} /></clipPath>
       </defs>
       <g clipPath={clip}>
         <path d={ring} fill={`url(#${id}-g)`} fillRule="evenodd" opacity={fillOp} />
-        <ellipse cx={cx} cy={cy} rx={rxo} ry={ryo} fill="none" stroke={WHITE} strokeWidth={2.5} strokeDasharray={PO} strokeDashoffset={PO * (1 - pe)} />
-        <ellipse cx={cx} cy={cy} rx={rxi} ry={ryi} fill="none" stroke={WHITE} strokeWidth={2.5} strokeDasharray={PI} strokeDashoffset={PI * (1 - pe)} />
+        <ellipse cx={cx} cy={cy} rx={rxo} ry={ryo} fill="none" stroke={LINE} strokeWidth={2.5} strokeDasharray={PO} strokeDashoffset={PO * (1 - pe)} />
+        <ellipse cx={cx} cy={cy} rx={rxi} ry={ryi} fill="none" stroke={LINE} strokeWidth={2.5} strokeDasharray={PI} strokeDashoffset={PI * (1 - pe)} />
         {ripples ? [0.3, 0.55, 0.8].map((t, i) => (
-          <ellipse key={i} cx={cx} cy={cy} rx={rxi + (rxo - rxi) * t} ry={ryi + (ryo - ryi) * t} fill="none" stroke={PURPLE_LIGHT} strokeWidth={1.6} strokeDasharray="16 22" strokeDashoffset={phase * (i % 2 ? -1 : 1) + i * 9} opacity={0.55 * fillOp} />
+          <ellipse key={i} cx={cx} cy={cy} rx={rxi + (rxo - rxi) * t} ry={ryi + (ryo - ryi) * t} fill="none" stroke={PRIMARY_LIGHT} strokeWidth={1.6} strokeDasharray="16 22" strokeDashoffset={phase * (i % 2 ? -1 : 1) + i * 9} opacity={0.55 * fillOp} />
         )) : null}
       </g>
     </svg>
@@ -122,12 +122,15 @@ export const HaloRing: React.FC<{cx?: number; cy?: number; rxo?: number; ryo?: n
 
 // ---- 主角柔光 ----
 /** 给矩形主角加双层紫柔光：放在主角组件之下，同位同尺寸。N 传入时 30 帧周期呼吸 ±15%；k 为强度 0→1（激活 8 帧渐亮用）。 */
-export const HeroGlow: React.FC<{x: number; y: number; w: number; h: number; r?: number; N?: number; k?: number; color?: string}> = ({x, y, w, h, r = 16, N, k = 1, color}) => {
-  const breathe = N === undefined ? 1 : 1 + 0.15 * Math.sin((2 * Math.PI * N) / 30);
+export const HeroGlow: React.FC<{x: number; y: number; w: number; h: number; r?: number; N?: number; k?: number; color?: string}> = ({x, y, w, h, r = RADIUS === 0 ? 0 : 16, N, k = 1, color}) => {
+  // 第 5 套 cards 等非发光套无呼吸，硬投影/彩色投影常驻（motion-vocabulary.md §光效）
+  const breathe = !IS_GLOW || N === undefined ? 1 : 1 + 0.15 * Math.sin((2 * Math.PI * N) / 30);
   const a = clamp01(k) * breathe;
   if (a <= 0.01) return null;
-  const glow = color ? `0 0 ${(12 * a).toFixed(0)}px ${(3 * a).toFixed(0)}px ${color}59, 0 0 ${(42 * a).toFixed(0)}px ${(14 * a).toFixed(0)}px ${color}73` : GLOW_PURPLE;
-  return <div style={{...abs(x, y, w, h), borderRadius: r, boxShadow: glow, opacity: color ? clamp01(k) : a}} />;
+  const glow = color
+    ? (IS_GLOW ? `0 0 ${(12 * a).toFixed(0)}px ${(3 * a).toFixed(0)}px ${withAlpha(color, 0.35)}, 0 0 ${(42 * a).toFixed(0)}px ${(14 * a).toFixed(0)}px ${withAlpha(color, 0.45)}` : GLOW_HERO)
+    : (IS_GLOW ? glowPrimary(a) : GLOW_HERO);
+  return <div style={{...abs(x, y, w, h), borderRadius: r, boxShadow: glow, opacity: clamp01(k)}} />;
 };
 
 // ---- 大数字 ----
@@ -135,7 +138,7 @@ export const fmtInt = (v: number) => Math.round(v).toString().replace(/\B(?=(\d{
 /** len 帧内从 a 计数到 b（幂 2 缓出），返回取整字符串（千分位） */
 export const countTo = (n: number, a: number, b: number, len = 20) => fmtInt(a + (b - a) * (1 - Math.pow(1 - clamp01(n / len), 2)));
 /** 大数字：Orbitron tabular + 紫硬投影 6px + 紫柔光（片名同款"重"字处理）；unit 为下方小字 */
-export const BigNumber: React.FC<{cx: number; cy: number; value: string | number; size?: number; color?: string; family?: string; weight?: number; letterSpacing?: number; shadow?: string; unit?: string; unitSize?: number; unitColor?: string; opacity?: number; dy?: number}> = ({cx, cy, value, size = 110, color = WHITE, family = FONT_ORB, weight = 700, letterSpacing = 2, shadow = `6px 6px 0 ${PURPLE}, 0 0 28px rgba(102,45,248,.45)`, unit, unitSize = 24, unitColor = '#A0A0A1', opacity = 1, dy = -2}) => (
+export const BigNumber: React.FC<{cx: number; cy: number; value: string | number; size?: number; color?: string; family?: string; weight?: number; letterSpacing?: number; shadow?: string; unit?: string; unitSize?: number; unitColor?: string; opacity?: number; dy?: number}> = ({cx, cy, value, size = 110, color = TEXT, family = FONT_NUM, weight = 700, letterSpacing = 2, shadow = IS_GLOW ? `0 0 24px ${withAlpha(PRIMARY, 0.55)}` : GLOW_HERO, unit, unitSize = 24, unitColor = DIM, opacity = 1, dy = -2}) => (
   <>
     <CText cx={cx} cy={cy} size={size} weight={weight} family={family} color={color} letterSpacing={letterSpacing} opacity={opacity} dy={dy} shadow={shadow} style={{fontVariantNumeric: 'tabular-nums'}}>
       {value}
@@ -146,7 +149,7 @@ export const BigNumber: React.FC<{cx: number; cy: number; value: string | number
 
 // ---- 小件 ----
 /** 四角小星（"冒星"），r = 外半径 */
-export const Sparkle: React.FC<{cx: number; cy: number; r: number; opacity?: number; color?: string}> = ({cx, cy, r, opacity = 1, color = WHITE}) => {
+export const Sparkle: React.FC<{cx: number; cy: number; r: number; opacity?: number; color?: string}> = ({cx, cy, r, opacity = 1, color = TEXT}) => {
   const k = 0.28;
   const d = `M0,${-r} C0,${-r * k} ${r * k},0 ${r},0 C${r * k},0 0,${r * k} 0,${r} C0,${r * k} ${-r * k},0 ${-r},0 C${-r * k},0 0,${-r * k} 0,${-r} Z`;
   return (
@@ -165,7 +168,7 @@ export const GradBall: React.FC<{cx: number; cy: number; r: number; stroke?: num
  * 倾斜平面（层级 / 空间分层用）：以 (cx,cy) 为中心的 w×h 平面，skewX(skew°) scaleY(sy) 成"躺着"的平行四边形；
  * children 用平面内坐标（原点左上、尺寸 w×h）绝对定位，会跟着一起变形。多层叠放：层距 90px，靠后的层 opacity 0.6。
  */
-export const TiltPlane: React.FC<{cx: number; cy: number; w?: number; h?: number; skew?: number; sy?: number; stroke?: string; sw?: number; fill?: string; opacity?: number; children?: React.ReactNode}> = ({cx, cy, w = 420, h = 260, skew = -20, sy = 0.5, stroke = WHITE, sw = 2, fill = 'rgba(0,0,0,.85)', opacity = 1, children}) => (
+export const TiltPlane: React.FC<{cx: number; cy: number; w?: number; h?: number; skew?: number; sy?: number; stroke?: string; sw?: number; fill?: string; opacity?: number; children?: React.ReactNode}> = ({cx, cy, w = 420, h = 260, skew = -20, sy = 0.5, stroke = LINE, sw = 2, fill = PANEL, opacity = 1, children}) => (
   <div style={{...abs(cx - w / 2, cy - h / 2, w, h), transform: `scaleY(${sy}) skewX(${skew}deg)`, transformOrigin: '50% 50%', opacity}}>
     <div style={{position: 'absolute', inset: 0, boxSizing: 'border-box', border: `${sw}px solid ${stroke}`, background: fill, filter: 'drop-shadow(0 0 2px rgba(255,255,255,.35))'}} />
     {children}
@@ -223,20 +226,22 @@ export const setPiece = (T0: number, T1: number) => ({
 // ---- 圆形光斑 / 暗角 / 主角组合（共用层图元，各组直接 import）----
 /** 圆形紫柔光斑（radial-gradient）：图形主角脚下/身后的大面积光，比 HeroGlow 的矩形 box-shadow 更适合圆形/人形主角（Gauge、PersonIcon、环）。N 传入时 30 帧呼吸 ±15%，k 为强度 0→1 */
 export const GlowBlob: React.FC<{cx: number; cy: number; r: number; N?: number; k?: number; alpha?: number}> = ({cx, cy, r, N, k = 1, alpha = 0.34}) => {
+  if (!IS_GLOW) return null;
   const breathe = N === undefined ? 1 : 1 + 0.15 * Math.sin((2 * Math.PI * N) / 30);
   const a = clamp01(k) * breathe * alpha;
   if (a <= 0.005) return null;
-  return <div style={{position: 'absolute', left: cx - r, top: cy - r, width: 2 * r, height: 2 * r, borderRadius: '50%', background: `radial-gradient(circle, rgba(102,45,248,${a.toFixed(3)}) 0%, rgba(102,45,248,${(a * 0.55).toFixed(3)}) 34%, rgba(102,45,248,0) 70%)`}} />;
+  return <div style={{position: 'absolute', left: cx - r, top: cy - r, width: 2 * r, height: 2 * r, borderRadius: '50%', background: `radial-gradient(circle, ${withAlpha(PRIMARY, a)} 0%, ${withAlpha(PRIMARY, a * 0.55)} 34%, ${withAlpha(PRIMARY, 0)} 70%)`}} />;
 };
 /** 屏幕空间顶/底暗角（推近时同步淡入 18 帧）：k 0→1。放在 CameraRig 之外（屏幕空间，不随相机）。
  *  顶带默认从 y=top(100) 起、高 topH(100)，**不压 HUD 胶囊（y 28–100）**；底带 560–687（止于进度条：条体半透明，压暗其后方会让条变暗，QC v1 C1）。 */
 export const Vignette: React.FC<{k: number; alpha?: number; top?: number; topH?: number}> = ({k, alpha = 0.4, top = 100, topH = 100}) => {
   if (k <= 0.005) return null;
-  const a = (alpha * clamp01(k)).toFixed(3);
+  const c0 = withAlpha(TOKENS.base.canvas, alpha * clamp01(k));
+  const c1 = withAlpha(TOKENS.base.canvas, 0);
   return (
     <>
-      <div style={{position: 'absolute', left: 0, top, width: 1280, height: topH, background: `linear-gradient(180deg, rgba(0,0,0,${a}) 0%, rgba(0,0,0,0) 100%)`}} />
-      <div style={{position: 'absolute', left: 0, top: 560, width: 1280, height: 127, background: `linear-gradient(0deg, rgba(0,0,0,${a}) 0%, rgba(0,0,0,0) 100%)`}} />
+      <div style={{position: 'absolute', left: 0, top, width: 1280, height: topH, background: `linear-gradient(180deg, ${c0} 0%, ${c1} 100%)`}} />
+      <div style={{position: 'absolute', left: 0, top: 560, width: 1280, height: 127, background: `linear-gradient(0deg, ${c0} 0%, ${c1} 100%)`}} />
     </>
   );
 };

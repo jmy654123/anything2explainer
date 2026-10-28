@@ -41,7 +41,18 @@ CFG_LANG = _m.group(1) if _m else 'zh'
 FPS = 30
 SR = 48000
 ENGINE = os.environ.get('TTS_ENGINE', 'auto')
-VOICE = os.environ.get('VOICE', 'zh-CN-YunxiNeural')
+# 声音是用户的选择点之一，写在 src/config.ts 的 voice（见 styles-voices.ts）。
+# 优先用环境变量 VOICE（临时覆盖），否则按 config.voice 查表拿 edge 音色，最后兜底云希。
+_VOICE_EDGE = {
+    'yunxi': 'zh-CN-YunxiNeural',
+    'yunyang': 'zh-CN-YunyangNeural',
+    'yunjian': 'zh-CN-YunjianNeural',
+    'xiaoxiao': 'zh-CN-XiaoxiaoNeural',
+    'xiaoyi': 'zh-CN-XiaoyiNeural',
+}
+_mv = re.search(r"voice:\s*'(yunxi|yunyang|yunjian|xiaoxiao|xiaoyi)'", _cfg)
+CFG_VOICE = _mv.group(1) if _mv else 'yunxi'
+VOICE = os.environ.get('VOICE', _VOICE_EDGE.get(CFG_VOICE, 'zh-CN-YunxiNeural'))
 RATE = os.environ.get('RATE', '+0%')          # 原速：默认不给语音加速（用户裁定）。+8% 会把中文语速从 ≈5.5 抬到 ≈6 字/秒，听着赶
 KOKORO_VOICE = os.environ.get('KOKORO_VOICE', 'am_liam')
 KOKORO_LANG = os.environ.get('KOKORO_LANG', 'a')       # a=American English, b=British
@@ -79,7 +90,7 @@ KOKORO_ONNX_FP = f'{_file_fp(KOKORO_ONNX_MODEL)}+{_file_fp(KOKORO_ONNX_VOICES)}'
 EDGE_TRIES = int(os.environ.get('EDGE_TRIES', 4))     # edge-tts 每句最多试几次（端点会间歇性返回空音频）
 GAP = int(os.environ.get('GAP', 10))          # 段内句间空白帧：只留一口气，不做停顿（用户反馈：小句之间加停顿会显得拖）
 PARA_GAP = int(os.environ.get('PARA_GAP', 20)) # 段末额外空白（narration.txt 用空行分段）：一段话讲完 / 切下一页才停，合计 GAP+PARA_GAP = 30 帧 ≈ 1 s
-                                              # —— 这是「末拍元素落位后停 1–1.5 s 再切」的时间来源（composition-and-light.md §7）
+                                              # —— 这是「末拍元素落位后停 1–1.5 s 再切」的时间来源（`common-rules.md` §7）
 CHAPTER_GAP = int(os.environ.get('CHAPTER_GAP', 45))  # 章节前空白帧
 LEAD = int(os.environ.get('LEAD', 40))        # 片头静音帧
 TAIL = int(os.environ.get('TAIL', 90))        # 片尾静音帧
@@ -195,7 +206,7 @@ async def synth_edge(text):
     import edge_tts
     mp3 = cache_path(text, '.mp3'); js = cache_path(text, '.json')
     if os.path.exists(mp3) and os.path.exists(js):
-        return mp3, json.load(open(js))
+        return mp3, json.load(open(js, encoding='utf-8'))
     for attempt in range(1, EDGE_TRIES + 1):
         audio = bytearray(); words = []
         try:
@@ -217,7 +228,7 @@ async def synth_edge(text):
         print(f'  ⚠ edge-tts 第 {attempt} 次失败（{why}），{1.5 * attempt:.1f}s 后重试：{text[:16]}…')
         await asyncio.sleep(1.5 * attempt)
     open(mp3, 'wb').write(audio)
-    json.dump(words, open(js, 'w'), ensure_ascii=False)
+    json.dump(words, open(js, 'w', encoding='utf-8'), ensure_ascii=False)
     return mp3, words
 
 
@@ -466,8 +477,8 @@ async def main(narr):
           'speech_sec': round(speech_sec, 2)}
     unit, cnt = ('字', total_chars) if lang == 'zh' else ('词', total_words)
     os.makedirs(f'{ROOT}/script', exist_ok=True)
-    json.dump(tl, open(f'{ROOT}/script/timeline.json', 'w'), ensure_ascii=False, indent=1)
-    with open(f'{ROOT}/script/timeline.md', 'w') as f:
+    json.dump(tl, open(f'{ROOT}/script/timeline.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    with open(f'{ROOT}/script/timeline.md', 'w', encoding='utf-8') as f:
         f.write(f"# 时间轴（{ENGINE} · {tl['voice']} {tl['rate']}，共 {total} 帧 = {total/FPS:.1f}s，{cnt} {unit}，语速 {cnt/max(1e-6,speech_sec):.2f} {unit}/s）\n\n")
         f.write('| 句 | 章 | 帧 from–to | 时长 | 末块 | 段末 | 文本（| 为字幕切分） |\n|---|---|---|---|---|---|---|\n')
         ci = {c['from']: c for c in chapters}
@@ -483,7 +494,7 @@ async def main(narr):
             f.write(f"- 第{c['n']}章 {c['title']}：f{c['from']}\n")
         f.write(f'\n段末 ¶ = narration.txt 里空行/章界前的那句（一个镜头讲完，画面在这里停 1–1.5 s 再切；段内句只隔 {GAP} 帧，不停顿）。\n')
         f.write(f'末块 = 末尾字幕块的帧数（段末句 ⚠ <{SHORT_TAIL}：末拍元素 22 帧入场 + 8 帧离场后停不满 30 帧）。补法：该句后加 `## gap 15–30` 重跑（缓存命中），或分镜时把末拍元素前挂到上一块。\n')
-    # 段末句的末块体检（composition-and-light.md §7 落位停留）；段内句不判——它们不换镜头，不需要停留
+    # 段末句的末块体检（`common-rules.md` §7 落位停留）；段内句不判——它们不换镜头，不需要停留
     short = [(s['id'], s['to'] - s['subs'][-1]['from'] + 1) for s in sentences if s['para'] and s['to'] - s['subs'][-1]['from'] + 1 < SHORT_TAIL]
     paras = sum(1 for s in sentences if s['para'])
     if short:
@@ -495,13 +506,13 @@ async def main(narr):
     # （手工拼引号会被解说词里的 \ ' ` ${} 破坏语法，甚至把文本写成代码）
     def lit(s):
         return json.dumps(s, ensure_ascii=False)
-    with open(f'{REM}/src/common/subs.ts', 'w') as f:
+    with open(f'{REM}/src/common/subs.ts', 'w', encoding='utf-8') as f:
         f.write('// 自动生成：scripts/tts_build.py（词边界 / 逐块合成 → 字幕块）。手改请改 script/narration.txt 后重跑。\n')
         f.write("export type SubEntry = {from: number; to: number; text: string};\nexport const SUBS: SubEntry[] = [\n")
         for sb in all_subs:
             f.write(f"  {{from: {sb['from']}, to: {sb['to']}, text: {lit(sb['text'])}}},\n")
         f.write('];\n')
-    with open(f'{REM}/src/common/timeline.ts', 'w') as f:
+    with open(f'{REM}/src/common/timeline.ts', 'w', encoding='utf-8') as f:
         f.write('// 自动生成：scripts/tts_build.py。帧号 1 起含端点。\n')
         f.write(f'export const TOTAL_FRAMES = {total};\n')
         f.write('export const CHAPTER_STARTS: Array<{n: number; title: string; from: number}> = [\n')

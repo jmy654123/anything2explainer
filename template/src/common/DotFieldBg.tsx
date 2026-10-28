@@ -16,8 +16,8 @@ export const DOT_STEP = 36, DOT_X0 = 24, DOT_Y0 = 18; // 设计坐标网格（fr
 const GRAIN_URL =
   "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .5 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>\")";
 
-const drawDots = (ctx: CanvasRenderingContext2D, t: number) => {
-  ctx.fillStyle = '#0b0c11';
+const drawDots = (ctx: CanvasRenderingContext2D, t: number, field: string, dot: string) => {
+  ctx.fillStyle = field;
   ctx.fillRect(-DW, -DH, DW * 3, DH * 3);
   const phase = ((t % 14) / 14) * 1700 - 300;
   for (let y = DOT_Y0; y < DH; y += DOT_STEP) {
@@ -27,7 +27,7 @@ const drawDots = (ctx: CanvasRenderingContext2D, t: number) => {
       const kk = k * k;
       const edge = Math.min(1, Math.max(0, 1.25 - Math.hypot((x - 480) / 560, (y - 270) / 360)));
       ctx.globalAlpha = (0.2 + 0.6 * kk) * edge;
-      ctx.fillStyle = '#cfe0ff';
+      ctx.fillStyle = dot;
       ctx.beginPath();
       ctx.arc(x, y, 1.5 + 0.5 * kk, 0, 6.283);
       ctx.fill();
@@ -36,7 +36,7 @@ const drawDots = (ctx: CanvasRenderingContext2D, t: number) => {
   ctx.globalAlpha = 1;
 };
 
-const DotCanvas: React.FC<{t: number}> = ({t}) => {
+const DotCanvas: React.FC<{t: number; field: string; dot: string}> = ({t, field, dot}) => {
   const {width, height} = useVideoConfig();
   const ref = useRef<HTMLCanvasElement>(null);
   useLayoutEffect(() => {
@@ -48,12 +48,12 @@ const DotCanvas: React.FC<{t: number}> = ({t}) => {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, width, height);
     ctx.setTransform(s, 0, 0, s, (width - DW * s) / 2, (height - DH * s) / 2);
-    drawDots(ctx, t);
-  }, [t, width, height]);
+    drawDots(ctx, t, field, dot);
+  }, [t, width, height, field, dot]);
   return <canvas ref={ref} width={width} height={height} style={{position: 'absolute', inset: 0, width: '100%', height: '100%'}} />;
 };
 
-export const DotFieldBg: React.FC<{specs: BgSpec[]; speed?: number; grain?: boolean}> = ({specs, speed = 1.5, grain = true}) => {
+export const DotFieldBg: React.FC<{specs: BgSpec[]; speed?: number; grain?: boolean; fieldColor?: string; dotColor?: string}> = ({specs, speed = 1.5, grain = true, fieldColor = '#0b0c11', dotColor = '#cfe0ff'}) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
   const N = frame + 1;
@@ -64,8 +64,8 @@ export const DotFieldBg: React.FC<{specs: BgSpec[]; speed?: number; grain?: bool
   if (!show) return null;
   const t = (frame / fps) * speed;
   return (
-    <div style={{position: 'absolute', inset: 0, overflow: 'hidden', background: '#0b0b0f'}}>
-      <DotCanvas t={t} />
+    <div style={{position: 'absolute', inset: 0, overflow: 'hidden', background: fieldColor}}>
+      <DotCanvas t={t} field={fieldColor} dot={dotColor} />
       {grain ? <div style={{position: 'absolute', inset: 0, backgroundImage: GRAIN_URL, backgroundSize: '160px 160px', opacity: 0.06, mixBlendMode: 'overlay', pointerEvents: 'none'}} /> : null}
     </div>
   );

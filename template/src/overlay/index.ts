@@ -15,6 +15,6 @@ export const SHOTS_OVERLAY_TOP: ShotDef[] = [
   {id: 'OV-EndCredit', from: END_CREDIT_RANGE[0], to: END_CREDIT_RANGE[1], Comp: EndCredit, layer: 'aboveBar'},
 ];
 export const BG_OVERLAY: BgSpec[] = [
-  {from: 1, to: 10, fog: false, stars: 'none'},
+  {from: 1, to: TITLE_RANGE[1]},
   {from: TOTAL_FRAMES - 40, to: TOTAL_FRAMES, fog: false, stars: 'none'},
 ];

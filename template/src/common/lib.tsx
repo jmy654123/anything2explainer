@@ -1,6 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, continueRender, delayRender, staticFile} from 'remotion';
 import {VIDEO} from '../config';
+import {styleById} from '../styles';
 
 // 画布与帧号约定：1280×720@30fps；帧号 N 从 1 起（N = useCurrentFrame() + F0，F0 = 镜头 ShotDef.from）。
 export const W = 1280;
@@ -59,8 +60,8 @@ export const FONT_EN = `'Helvetica Neue', Helvetica, Arial, sans-serif`;
 // ---- 语言开关（src/config.ts 的 VIDEO.lang）----
 /** 'zh' 中文片（默认）｜'en' 英文片。影响：字体压窄系数、基线补偿、文案与字幕预算（见 reference/narration-storyboard.md §5）。 */
 export const LANG = VIDEO.lang ?? 'zh';
-/** 中文标题惯用 scaleX .8–.85 压窄；拉丁字母压窄会变形，英文片一律 1。 */
-export const SQUEEZE = LANG === 'en' ? 1 : 0.85;
+/** 中文标题压窄系数取自当前风格 S3 槽（深底 .82–.85 / 浅底 1 不压窄）；拉丁字母压窄会变形，英文片一律 1。 */
+export const SQUEEZE = 1;
 /** CJK 行盒 ascent 让墨迹比 top 低 3–7px，居中要预扣；拉丁不需要。 */
 export const TEXT_DY = LANG === 'en' ? 0 : -2;
 

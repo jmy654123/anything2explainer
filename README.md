@@ -7,7 +7,7 @@
 
 **English** | [简体中文](README_ZH.md)
 
-**Topic in, narrated explainer video out.** anything2explainer is a [Claude Code](https://claude.com/claude-code) / [Codex](https://openai.com/codex) skill that turns any topic into a black-canvas motion-graphics explainer video with TTS voiceover, subtitles and a chapter progress bar, in Chinese or English. Every frame is drawn in code with [Remotion](https://remotion.dev) (React + TypeScript). No stock footage, no generative video model, no frames lifted from anyone else's work.
+**Topic in, narrated explainer video out.** anything2explainer is a [Claude Code](https://claude.com/claude-code) / [Codex](https://openai.com/codex) skill that turns any topic into a motion-graphics explainer video across five visual styles (`dashboard`, `citation`, `growth`, `compare`, `cards`) and five voiceover personas, with TTS voiceover, subtitles and a chapter progress bar, in Chinese or English. Every frame is composed in code with [Remotion](https://remotion.dev) (React + TypeScript), never lifting frames from existing videos.
 
 It is not a CLI. What ships here is the whole method an AI coding agent needs to finish the film: a compilable Remotion template, a primitives and lighting library, tooling for voiceover / storyboard / rendering / quantitative QC, written style and motion specs, a multi-agent division-of-labour protocol, and one complete reference film as the quality bar.
 
@@ -35,9 +35,9 @@ Both cuts share one storyboard and 44 shots; the English cut re-times every shot
 | Frame / rate | 1280×720 @ 30fps, H.264 |
 | Length | your call (see table below); 2–8 minutes all work |
 | Language | Chinese or English (`lang` in `src/config.ts`); typography, subtitle budgets and TTS switch with it |
-| Look | black canvas with one of two backdrops, star field + fog gradient or dot-field wave (`bg` in `src/config.ts`; the dot-field wave is ported from video-talkcraft); white line art + purple accents; ultra-bold headline type |
+| Look | 5 built-in visual styles (`style` in `src/config.ts`: `dashboard` / `citation` / `growth` / `compare` / `cards`), covering dark & light canvases, glass / outline / solid geometry, glow vs shadow, and semantic palette tokens (`styles.ts` → `theme.ts`) |
 | Persistent layers | 44px white-on-black-stroke subtitles, bottom chapter progress bar, top capsule HUD, optional pipeline rail, `built by Anything2Explainer skill` end credit (`builtBy`, set to `''` to drop) |
-| Voiceover | Chinese: edge-tts `zh-CN-YunxiNeural` (Yunxi, male, unmodified rate ≈5.5 chars/s). English: kokoro-82m `am_liam` (Liam, male). Or bring your own TTS / finished audio |
+| Voiceover | Chinese: 5 edge-tts personas (`voice` in `src/config.ts`: `yunxi` / `yunyang` / `yunjian` / `xiaoxiao` / `xiaoyi`, unmodified rate ≈5.5 chars/s). English: kokoro-82m `am_liam`. Or bring your own TTS / finished audio |
 
 Length drives how much ground the film covers, and the size of the whole pipeline:
 
@@ -161,7 +161,7 @@ No. Remotion renders through headless Chromium on the CPU. The Chinese default v
 Yes. Put the finished audio at `public/assets/<slug>/audio.wav` and fill `src/common/timeline.ts` and `subs.ts` by hand (format documented at the top of `tts_build.py`). Everything downstream is unchanged.
 
 **Can I change the visual style?**
-There is one visual style, on purpose, with a single switch: the backdrop, `bg` in `src/config.ts` (`'dots'` dot-field wave by default, `'stars'` star field with fog). To change anything else, edit `reference/style-guide.md` and `src/ui.tsx`; the shot code only uses those primitives.
+Yes — there are five, and you pick one rather than edit one: Future Tech Data Screen (`dashboard`), AI Citation Chain (`citation`), Business Growth Story (`growth`), SEO vs GEO Split (`compare`), Minimal Motion Graphics (`cards`). Setting `style` in `src/config.ts` swaps the whole look — backdrop, palette, type, radius and stroke, how light is made, overlay colours and asset source. Per-style specs live in `reference/styles/<n>-<id>.md`; rules that hold across all five live in `reference/common-rules.md`. Shot code only references semantic tokens (`PRIMARY`, `PANEL`, `GLOW_HERO`…), never literal colours, so switching styles does not touch the shots. Voice is a separate choice (`config.voice`) — changing the look does not require re-running the voiceover.
 
 **Are the renders reproducible?**
 Yes. Every animation is a pure function of the frame number with seeded randomness, and text fitting is computed rather than measured in the DOM, so re-rendering produces identical frames.
@@ -178,11 +178,17 @@ Chinese and English. Each has its own pacing model, subtitle budget and default 
 ## Repo layout
 
 ```
-SKILL.md                  the process: 9 stages, four checkpoints, quality bar
+SKILL.md                  the process: 8 stages, two style choices, quality bar
 reference/                specs written for the main session and the agents
-  style-guide.md            safe areas, palette, fonts, primitive catalogue, layout habits
+  common-rules.md           rules that hold for all five styles: canvas and frame numbers, duration table, three size tiers, light follows the hero, set-piece cap, sustained motion and settle, motion frame counts, safe areas, shot and beat, chapter boundaries
+  styles/00-index.md        the five styles: roles, public-vs-style criterion, 8 slots, preselect rules
+  styles/01-dashboard.md    (1) Future Tech Data Screen — default, image-gen
+  styles/02-citation.md     (2) AI Citation Chain — code only
+  styles/03-growth.md       (3) Business Growth Story — royalty-free footage
+  styles/04-compare.md      (4) SEO vs GEO Split — light split screen
+  styles/05-cards.md        (5) Minimal Motion Graphics — light solid blocks
   motion-vocabulary.md      entrance / emphasis / light / exit / camera formulas and frame counts
-  composition-and-light.md  three size tiers, light follows the hero, set-piece choreography, QC metrics
+  narration-guidance.md     13 narration-writing principles and a pre-flight checklist
   narration-storyboard.md   how to write narration, voiceover params, storyboard tokens, shot pattern table
   research-brief.md         researcher prompt and fact rules
   agent-build-rules.md      build-agent protocol
@@ -216,8 +222,9 @@ Remotion itself has its own license terms for companies — see [remotion.dev/li
 
 ## Known limits
 
-- Chinese and English are both supported (`lang: 'zh' | 'en'`), each with its own pacing, subtitle budget (16 chars / 48 characters per block) and default voice. Both cuts are embedded above; the paper trail in `examples/rag/` is from the Chinese cut. One visual style with two backdrops (`bg: 'stars' | 'dots'`); changing anything else means editing `reference/style-guide.md` + `src/ui.tsx`.
-- Not for: replicating an existing video, talking-head presenter footage, or films that are mostly live action.
+- Chinese and English are both supported (`lang: 'zh' | 'en'`), each with its own pacing, subtitle budget (16 chars / 48 characters per block) and default voice. Both cuts are embedded above; the paper trail in `examples/rag/` is from the Chinese cut. Five visual styles live in `config.style`, specced in `reference/styles/<n>-<id>.md`; switching means setting `style` and updating any literal colour left in hand-written shots.
+- **Only style 1 has a full reference film.** Styles 2-5 are coded and pass static checks, but the light-background pair (`compare` / `cards`) — inverted subtitle colour, white panels, darkened progress bar — has not been verified on a real render yet. Render a 30-second preview before committing a full film.
+- Not for: replicating an existing video, talking-head presenter footage, or films that are mostly live action (style 3 uses footage as backdrop only).
 - Once the narration is voiced, the words are frozen — shot code hard-codes frame numbers, so a rewrite re-times everything.
 - Parallel builds are demanding: several agents bundle Remotion at once, so keep ≥5 GB free; tmux panes are capped, so past ~12 you have to dispatch in waves.
 

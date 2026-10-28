@@ -1,7 +1,17 @@
 /**
- * 片子级配置（唯一需要按主题改的文件之一；另一个是 script/narration.txt）。
- * 句 id（S01…）来自 scripts/tts_build.py 生成的 timeline.ts；章节数与标题来自 narration.txt 的 `# CHAPTER n 标题` 行。
+ * 片子级配置。全片只有两个「用户选择」，都写在这里：
+ *   1. `style` —— 画面风格（五套之一）。由主题预选（`styles.ts` 的 `pickDefaultStyle`），用户可改。
+ *   2. `voice` —— 声音风格（五只之一）。独立选择，不由主题决定。
+ *
+ * 其余字段都是「按本片内容填」的：标题、章节、HUD 条目、流程轨。
+ * 句 id（S01…）来自 `scripts/tts_build.py` 生成的 `timeline.ts`；章节数与标题来自 `narration.txt` 的 `# CHAPTER n 标题` 行。
+ *
+ * 注意：底色 / 幕底 / 调色板**不在这里**，由 `style` 决定（`styles.ts` → `theme.ts`）。早先版本还有一个
+ * `bg` 字段与风格争同一个轴，已删除 —— 幕底现在读 `style` 那一套的 `base.backdrop`。
  */
+import type {StyleId} from './styles';
+import type {VoiceId} from './styles-voices';
+
 export type HudEntry = {fromS: string; toS: string; text: string; tech?: string; fromOffset?: number; toOffset?: number; w?: number};
 export type RailSpec = {steps: string[]; switchS: string[]; fromS: string; toS: string};
 export const VIDEO = {
@@ -12,11 +22,33 @@ export const VIDEO = {
    * 居中文字的基线补偿（CJK −2 / 拉丁 0）、文案与字幕块长度预算（见 reference/narration-storyboard.md §5）。
    */
   lang: 'zh' as 'zh' | 'en',
+
+  // ==========================================================================
+  // 选择点 1：画面风格（五套之一）
+  // ==========================================================================
   /**
-   * 幕底：'dots' 点阵波（默认，`common/DotFieldBg.tsx`，video-talkcraft dot-field-wave 移植）｜'stars' 星点 + 雾底渐变（早期样片风格）。
-   * 两者互斥；镜头里的 BG_Gn 覆写（`stars:'none'` 关幕底）对两种方案都生效。frame_metrics.py 会按这里的值抠掉幕底再统计。
+   * dashboard ｜ citation ｜ growth ｜ compare ｜ cards
+   *
+   * 由主题预选：`pickDefaultStyle(主题)`（`styles.ts`）。用户没意见就用预选的那套。
+   * 写进这里之后，画布底色、幕底、调色板、字体压窄、图元语法、光、覆盖层皮肤、高光时刻类型
+   * 全部跟着变 —— 这些值在 `styles.ts`，本文件不重复。
+   *
+   * **必须先问过用户再写**：占位不是许可。没写上之前不写分镜、不生成背景、不跑配音。
    */
-  bg: 'dots' as 'stars' | 'dots',
+  style: 'dashboard' as StyleId,
+
+  // ==========================================================================
+  // 选择点 2：声音风格（五只之一）
+  // ==========================================================================
+  /**
+   * yunxi ｜ yunyang ｜ yunjian ｜ xiaoxiao ｜ xiaoyi
+   *
+   * **与画面风格独立**：`pickDefaultVoice(style)` 只给一个预选，用户可以选任意一只，
+   * 不存在「选了某套画面就必须用某只声音」的绑定。配音时把对应 edge 音色传给 VOICE：
+   * `VOICE=<voiceById(voice).edge> python3 scripts/tts_build.py`
+   */
+  voice: 'yunyang' as VoiceId,
+
   /**
    * 片头。中文片：big 用 Audiowide 宽体（缩写/英文词），rest 用 Noto 900（中文部分），en 是英文全称，tagline 一句话钩子。
    * 英文片：rest 留空 ''（不显示），big 放主词/缩写，en 放全称或副标，tagline 一句话钩子。
@@ -38,7 +70,7 @@ export const VIDEO = {
     {fromS: 'S01', toS: 'S01', text: '第一节名'},
     {fromS: 'S02', toS: 'S02', text: '第二节名', tech: 'Optional English'},
   ] as HudEntry[],
-  /** 流程轨（可选，只给真有先后顺序步骤的章；一章最多一条，五步以内）：y118–162，当前步紫、已过灰底、未到灰边；有轨的章内容主区 y175–620。
+  /** 流程轨（可选，只给真有先后顺序步骤的章；一章最多一条，五步以内）：y118–162，当前步主色、已过灰底、未到灰边；有轨的章内容主区 y175–620。
    *  例：{steps: ['第一步', '第二步', '第三步'], switchS: ['S12', 'S14', 'S16'], fromS: 'S12', toS: 'S18'} */
   rails: [] as RailSpec[],
   /** 片头帧数（tts_build 的 LEAD+CHAPTER_GAP 决定，通常 85）与片尾压黑 */

@@ -4,14 +4,19 @@ import {FONT_HEAVY} from './lib';
 import {kf} from './easing';
 import {fitSize} from './textfit';
 import {TOTAL_FRAMES, CHAPTER_STARTS, SENTENCES} from './timeline';
+import {TOKENS, IS_LIGHT} from '../theme';
 
 /**
  * 底部章节进度条（半透明条体 y687–720、填充右缘 x=1280·N/TOTAL、n−1 根分隔线、章节名粗黑斜体 24px），来源于一条 MG 科普原片的实测模型（半透明条体 y687–720、填充右缘 x=1280·N/TOTAL、3 根分隔线、4 个章节名粗黑斜体 24px），
  * 章节切换帧来自 timeline.ts（tts_build.py 自动生成），当前章高亮保持到片尾。章名 ≤6 字为宜。
  */
 export const PROGRESS_ALPHA = 0.52;
-export const FILL_RGBA = 'rgba(190,170,250,0.52)';
-export const TRACK_RGBA = 'rgba(243,243,243,0.32)';
+/** 已播 / 未播条体颜色来自当前风格（S6 槽）。旧名保留，值已参数化。 */
+export const FILL_RGBA = TOKENS.overlay.barFill;
+export const TRACK_RGBA = TOKENS.overlay.barTrack;
+/** 分隔线与章名：浅底套要换成深色，否则白线白字在米白底上消失 */
+const DIVIDER_COLOR = IS_LIGHT ? 'rgba(15,23,42,0.55)' : 'rgba(255,255,255,0.9)';
+const LABEL_COLOR = TOKENS.overlay.subColor;
 export const BAR_TOP = 687;
 export const BAR_H = 720 - BAR_TOP;
 const NCH = Math.max(1, CHAPTER_STARTS.length);
@@ -27,9 +32,9 @@ export const CHAPTERS: Array<{text: string; cx: number; from: number}> = CHAPTER
 export const CHAPTER_HIGHLIGHT_END = TOTAL_FRAMES + 1;
 export const LABEL_SIZE = 24;
 export const LABEL_SLOT_W = Math.round(1280 / NCH) - 30; // 章名不得压到分隔线上（英文章名长，自动缩到 17px 兜底）
-export const LABEL_SCALE_Y = 0.9;
+export const LABEL_SCALE_Y = 1;
 export const LABEL_TOP = 690.5;
-export const LABEL_SKEW = -10;
+export const LABEL_SKEW = 0;
 export const LABEL_DIM_ALPHA = 0.55;
 
 export const currentChapter = (N: number) => {
@@ -50,19 +55,19 @@ export const ProgressBar: React.FC<{dimKf?: Array<[number, number]>; frame?: num
       <div style={{position: 'absolute', left: 0, top: 0, width: 1280, height: BAR_H, transform: 'translateY(0.25px)'}}>
         <div style={{position: 'absolute', left: fillW, top: 0, width: 1280 - fillW, height: BAR_H, background: TRACK_RGBA}} />
         <div style={{position: 'absolute', left: 0, top: 0, width: fillW, height: BAR_H, background: FILL_RGBA}} />
-        {dim < 0.999 ? <div style={{position: 'absolute', left: 0, top: 0, width: 1280, height: BAR_H, background: '#000', opacity: 1 - dim}} /> : null}
+        {dim < 0.999 ? <div style={{position: 'absolute', left: 0, top: 0, width: 1280, height: BAR_H, background: IS_LIGHT ? '#FFFFFF' : '#000', opacity: 1 - dim}} /> : null}
       </div>
       {DIVIDERS.map((x) => (
-        <div key={x} style={{position: 'absolute', left: x - DIVIDER_W / 2, top: 693 - BAR_TOP, width: DIVIDER_W, height: 22, background: 'rgba(255,255,255,0.9)'}} />
+        <div key={x} style={{position: 'absolute', left: x - DIVIDER_W / 2, top: 693 - BAR_TOP, width: DIVIDER_W, height: 22, background: DIVIDER_COLOR}} />
       ))}
       {CHAPTERS.map((c, i) => (
         <div
           key={c.text}
           style={{
             position: 'absolute', left: c.cx, top: LABEL_TOP - BAR_TOP,
-            transform: `translateX(-50%) skewX(${LABEL_SKEW}deg) scaleY(${LABEL_SCALE_Y})`, transformOrigin: '50% 50%',
+            transform: 'translateX(-50%) scaleX(1)', transformOrigin: '50% 50%', letterSpacing: 1.5,
             whiteSpace: 'nowrap', fontFamily: FONT_HEAVY, fontWeight: 900, fontSize: fitSize(c.text, LABEL_SLOT_W, LABEL_SIZE, 17), lineHeight: 1,
-            color: i === ch ? 'rgba(255,255,255,1)' : `rgba(255,255,255,${LABEL_DIM_ALPHA})`,
+            color: LABEL_COLOR, opacity: i === ch ? 1 : LABEL_DIM_ALPHA,
           }}
         >
           {c.text}

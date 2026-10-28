@@ -2,12 +2,17 @@ import React from 'react';
 import {AbsoluteFill, Sequence} from 'remotion';
 import {SUBS} from './subs';
 import {fitSize, textW} from './textfit';
+import {TOKENS} from '../theme';
 
 /**
  * 字幕：白 #FFF Noto Sans SC 700 44px、居中 x=640、CSS top 637（墨迹 y644–684）、黑描边 4px（16+8+4 方向 text-shadow 环，避免 -webkit-text-stroke 的尖角刺）、
  * 无底框（靠雾底衬托）、进出单帧硬切。条目由 scripts/tts_build.py 从配音词边界生成（每块中文 ≤16 字 / 英文 ≤48 字符）。
  */
-export const SUB_STYLE = {fontSize: 44, weight: 700, top: 637, color: '#FFFFFF', stroke: 4, strokeColor: '#000000'};
+/**
+ * 字幕配色来自当前风格（S6 槽）：深底套是白字黑边，浅底套自动反转为深字白边。
+ * 尺寸与位置（44px / top 637）是公共规则，不随风格变 —— 字幕带 y637–690 是安全区，风格不能动它。
+ */
+export const SUB_STYLE = {fontSize: 44, weight: 700, top: 637, color: TOKENS.overlay.subColor, stroke: 4, strokeColor: TOKENS.overlay.subStroke};
 export const SUB_MAX_W = 1160; // 安全区 x60–1220；超宽自动缩到 34px 兜底（中文 ≤16 字 / 英文 ≤48 字符本来就装得下）
 const ring = (r: number, k: number, col: string) => Array.from({length: k}, (_, i) => {
   const a = (i / k) * Math.PI * 2;

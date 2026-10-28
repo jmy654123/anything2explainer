@@ -1,5 +1,7 @@
 # 《RAG 与知识库》成片 QC 协议（原创片：对照分镜表与风格指南，不是对照原片）
 
+> **这是样片当时的原始 QC 协议，仅作归档参考，不要照它派单**：现行版是 `reference/agent-qc-rules.md`（按本片选定的 `styles/<n>-<id>.md` 判，不再按单一的紫色/黑底判）。留档是为了看当时的判据与报告格式。
+
 输入：成片逐帧 `rag/fin_frames/f_%04d.jpg`（1 起）、缩略总表 `rag/renders/sheet_vN.html`、`rag/分镜表.md`（帧区间/节拍/画面意图）、`rag/script/timeline.md`（字幕块帧号）、`rag/STYLE_GUIDE.md`、`rag/research/RAG调研.md`、各组 `remotion/src/rag/shots/Gn/BUILD_NOTES.md`（已知降级项，不重复报）。
 输出：`rag/qc/qc_vN_Gn.md`，**边查边 append**。每条：`| 严重度 高/中/低 | 镜头 | 帧 | 现象 | 判据 | 建议修法 |`。
 

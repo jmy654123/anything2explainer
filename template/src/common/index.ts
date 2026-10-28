@@ -5,6 +5,7 @@ export * from './textfit';
 export * from './Glitch';
 export * from './StarField';
 export * from './Fog';
+export * from './Backdrop';
 export * from './DotFieldBg';
 export type {ShotDef, BgSpec} from './types';
 export * from './ProgressBar';

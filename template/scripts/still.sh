@@ -8,7 +8,7 @@ COMP=$1; FRAMES=$2; OUT=$3; TAG=${4:-$COMP}
 B=build_dev_$TAG
 [ -d "$B" ] || npx remotion bundle src/index.ts --out-dir "$B" --log=error
 mkdir -p "$OUT"
-for N in ${(s:,:)FRAMES}; do
+for N in $(echo "$FRAMES" | tr "," " "); do
   npx remotion still "$B" "$COMP" "$OUT/f_$(printf %04d $N).png" --frame=$((N-1)) --log=error
 done
 # 清理 4 小时以上没动过的 remotion 临时 bundle（只清明显已死的：这台机器上可能有别的

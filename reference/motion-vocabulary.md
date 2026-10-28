@@ -24,21 +24,26 @@
 | 白闪 | 元素 filter brightness 1→1.6→1 | 6–10 |
 | 高亮条 wipe | 紫色半透明条自左 scaleX 0→1 | 12 |
 
-## 光效（谁发光、怎么亮；规则见 `composition-and-light.md`，组件在 `src/fx.tsx`）
+## 光效（谁发光、怎么亮；结构规则见 `common-rules.md §5`，组件在 `src/fx.tsx`）
+
+> **本表写的是「光的机制」，不是「光的颜色」。**颜色一律取 `theme.ts` 的语义令牌（`GLOW_HERO` / `GLOW_ACCENT` / `GLOW_NEG` / `GLOW_TEXT` / `BLOOM`），不要写 `rgba(102,45,248,…)`。
+> **形态按本套 S5**：第 1/2 套是发光（box-shadow / drop-shadow 柔光）；第 3 套是投影 + 一层暖金柔光；第 4 套是彩色投影；第 5 套是硬投影（无模糊）。后三套的 `GLOW_*` 令牌已经指向投影，调 `HeroGlow` 出来的是「浮起来」而不是「发光」——这是设计，不是 bug。
+
 | 名称 | 公式/组件 | 帧数 | 用途 |
 |---|---|---|---|
-| 主角常亮 | `<HeroGlow x y w h N>` 双层紫柔光 + 30 帧呼吸 ±15%；或 `LLMIcon glow` | 常驻 | **每镜头主角必带**；配角不带 |
-| 紫光条横扫 | `<LightSweep N rounds={[T0+4,T0+22,T0+40]}>` 每轮 3 条、2 帧错峰、16 帧、α .6/.55/.55 白芯 | 3×16 | **登场型高光时刻专用，全片 ≤2 处**（扫光白名单）：核心概念首次登场 + 可选结尾回扣；大数字 / 论点 / 象征物型不用 |
-| 舞台光线 | `<StageLine N f0 flashAt>` 14 帧展宽到 720 → 呼吸 → 节拍帧白闪 3 帧消失 | 14+ | 主角落点的预示线；只随扫光出现（登场型专用） |
-| 幽灵轮廓 | `<GhostText opacity={ghostOpacity(N,f0,until)}>` 白描边 10% 隐现 | 12 淡入 | 主角大字出现前约 40 帧；只随扫光出现（登场型专用） |
-| 光环 | `<HaloRing p fillOp phase half>` 白描边 draw-on 20 帧 + 紫渐变 12 帧 + 3 圈虚线波纹 2 帧一相位 | 20 | 象征物脚下（back / 主体 / front 三层） |
-| 紫硬投影 | 大字 textShadow `6px 6px 0 PURPLE, 0 0 28px rgba(102,45,248,.45)`（`BigNumber` 默认） | 常驻 | Audiowide / Orbitron 大字、片名 |
-| 紫描边 | Noto 900 大字 `WebkitTextStroke 2.5px PURPLE` + `paintOrder: stroke fill` + 紫柔光 | 常驻 | 结论大字 |
-| 橙色发光 | `GLOW_ORANGE` / textShadow 橙 | 常驻 | 指标数字、结果项（−49%、¥3.20） |
-| 柔光亮起 | boxShadow `GLOW_PURPLE_S` α 0→1 | 8 | 重点转移到某一项 |
+| 主角常亮 | `<HeroGlow x y w h N>` 双层主色柔光 + 30 帧呼吸 ±15%；或 `LLMIcon glow` | 常驻 | **每镜头主角必带**；配角不带。第 5 套无呼吸（S8 禁发光），改用硬投影常驻 |
+| 主色光条横扫 | `<LightSweep N rounds={[T0+4,T0+22,T0+40]}>` 每轮 3 条、2 帧错峰、16 帧、α .6/.55/.55 白芯 | 3×16 | **登场型高光时刻专用，全片 ≤2 处**（扫光白名单）。**第 3/4/5 套禁用**，其 S8 明确禁止 |
+| 舞台光线 | `<StageLine N f0 flashAt>` 14 帧展宽到 720 → 呼吸 → 节拍帧白闪 3 帧消失 | 14+ | 主角落点的预示线；只随扫光出现（登场型专用，同上三套禁用） |
+| 幽灵轮廓 | `<GhostText opacity={ghostOpacity(N,f0,until)}>` 白描边 10% 隐现 | 12 淡入 | 主角大字出现前约 40 帧；只随扫光出现（登场型专用，同上三套禁用） |
+| 光环 | `<HaloRing p fillOp phase half>` `LINE` 描边 draw-on 20 帧 + 主色渐变 12 帧 + 3 圈虚线波纹 2 帧一相位 | 20 | 象征物脚下（back / 主体 / front 三层） |
+| 主色硬投影 | 大字 textShadow `6px 6px 0 PRIMARY` + `GLOW_HERO` 一层（`BigNumber` 默认） | 常驻 | 宽体 / 数字大字、片名。第 5 套即本套主语法（offset 8px、无模糊） |
+| 主色描边 | Noto 900 大字 `WebkitTextStroke 2.5px PRIMARY` + `paintOrder: stroke fill` + 主色柔光 | 常驻 | 结论大字 |
+| 第二重点发光 | `GLOW_ACCENT` / textShadow `ACCENT` | 常驻 | 指标数字、结果项、「另一方」 |
+| 柔光亮起 | boxShadow `GLOW_HERO_S` α 0→1 | 8 | 重点转移到某一项 |
 | 光先灭 | 离场前 6 帧 glow α→0，再整体归零淡出 | 6+8 | 任何带光元素的离场 |
-| 白闪 | filter brightness 1→1.6→1，或 `StageLine` 的 flash | 3–6 | 事件：点击、命中、落槌 |
-一帧内：主角光 1 处 + 重点光 ≤1 处；光只有紫 / 橙 / 红三色；白 bloom 只给结构线条。三轮扫光 → 光线 → 轮廓 → 白闪 + glitch 的完整编排见 `composition-and-light.md` §3 与 `fx.tsx` 的 `SET_PIECE`。
+| 白闪 | filter brightness 1→1.6→1，或 `StageLine` 的 flash | 3–6 | 事件：点击、命中、落槌。**第 3/4/5 套禁用** |
+
+一帧内：主角光 1 处 + 重点光 ≤1 处；**颜色角色只有三个**（`PRIMARY` / `ACCENT` / `NEG`，具体色值由本套 S2 定），白 bloom 只给结构线条。三轮扫光 → 光线 → 轮廓 → 白闪 + glitch 的完整编排见 `common-rules.md §6` 与 `fx.tsx` 的 `SET_PIECE`。
 
 ## 离场（**硬切前必须归零**）
 | 名称 | 公式 | 帧数 |
@@ -70,7 +75,7 @@
 
 ## 节拍
 - 元素出现帧 = 对应字幕块起始帧（`script/timeline.md` 每个 ｜ 块）；容差 −6…+3。
-- 每句解说至少一处可察觉的画面变化；元素完全静止 >3 s 才是缺陷，**不为凑动作给静止物体加呼吸 / 漂浮 / 飘动**（`composition-and-light.md` §7）。
+- 每句解说至少一处可察觉的画面变化；元素完全静止 >3 s 才是缺陷，**不为凑动作给静止物体加呼吸 / 漂浮 / 飘动**（`common-rules.md` §7）。
 - **镜头 ≠ 句**：镜头按画面单元分，短句（<3 s 或只有一个字幕块）并入相邻镜头当一个节拍，不单独入场 + 离场；单镜头 ≥120 帧；能承接（同一元素带到下一镜头）就不清场。
 - 句间空白：段内 10 帧（`tts_build.py` GAP，只够一口气）、段末 30 帧（+`PARA_GAP`）、章前 45 帧——**停顿只在段末与换页处**；成片比纯语音长 5–8% 是停留预算。镜头区间 = [首句 from−8, 下一句 from−9]（章末 / 片末 = 末句 to+2），末 8 帧离场、后一镜头首帧起入场。
 - **落位停留**：末拍元素落位帧 → 离场起点 ≥30 帧（目标 30–45，1–1.5 s），稳定期内不新增元素、不运镜。段末句末块 <45 帧的（`tts_build.py` 带 ¶ 列出）三选一：末拍元素前挂到上一块 / 文案加 `## gap 15–30` / 并入相邻镜头。

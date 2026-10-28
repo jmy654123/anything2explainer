@@ -7,7 +7,7 @@
 
 [English](README.md) | **简体中文**
 
-**给一个主题，产出一条带配音的科普讲解视频。** anything2explainer 是一个 [Claude Code](https://claude.com/claude-code) / [Codex](https://openai.com/codex) skill：输入任意主题，输出一条黑底 MG（motion graphics）风格的讲解视频，带 TTS 配音、字幕和章节进度条，中文或英文都行。画面全部由 [Remotion](https://remotion.dev)（React + TypeScript）代码绘制，不用素材库，不用视频生成模型，也不使用任何现有视频的帧。
+**给一个主题，产出一条带配音的科普讲解视频。** anything2explainer 是一个 [Claude Code](https://claude.com/claude-code) / [Codex](https://openai.com/codex) skill：输入任意主题，从五套视觉风格（`dashboard` / `citation` / `growth` / `compare` / `cards`）与五只独立音色中选定组合，输出一条 MG（motion graphics）科普讲解视频，带 TTS 配音、字幕和章节进度条，中文或英文都行。画面由 [Remotion](https://remotion.dev)（React + TypeScript）代码合成绘制，绝不使用任何现有视频的帧。
 
 它不是一个 CLI。仓库里装的是让 AI 编程 agent 把片子做出来的整套方法：可编译的 Remotion 模板工程、图元与光效库、配音/分镜/渲染/量化质检工具、风格与动效规范、多 agent 分工协议，以及一条完整样片作为质量标尺。
 
@@ -35,9 +35,9 @@ https://github.com/user-attachments/assets/e2771c68-a28c-4459-ac5a-a5b685181eeb
 | 画幅 / 帧率 | 1280×720 @ 30fps，H.264 |
 | 时长 | 由你定（见下表），2–8 分钟都能做 |
 | 语言 | 中文或英文（`src/config.ts` 的 `lang`）；排版、字幕长度预算、配音默认值随它切换 |
-| 视觉 | 黑底，幕底二选一：点阵波（默认，移植自 video-talkcraft 的 dot-field-wave），或星点 + 雾底渐变（`src/config.ts` 的 `bg`）；白线条图形 + 紫色重点；超粗黑体大字 |
+| 视觉 | 五套内置画面风格（`src/config.ts` 的 `style`：`dashboard` 数据大屏 / `citation` 引用链路 / `growth` 增长故事 / `compare` 分屏对比 / `cards` 极简色块），涵盖深底与浅底、发光与投影、8 槽语义令牌（`styles.ts` → `theme.ts`） |
 | 常驻层 | 44px 白字黑边字幕、底部章节进度条、顶部胶囊 HUD、可选流程轨、片尾署名 `built by Anything2Explainer skill`（`config.builtBy`，设为 `''` 去掉） |
-| 配音 | 中文 edge-tts `zh-CN-YunxiNeural`（云希，男声，原速不加速 ≈5.5 字/秒）/ 英文 kokoro-82m `am_liam`（Liam，男声）；也可用你自己的 TTS 或成品配音 |
+| 配音 | 中文五只 edge-tts 音色（`src/config.ts` 的 `voice`：`yunxi` / `yunyang` / `yunjian` / `xiaoxiao` / `xiaoyi`，原速 ≈5.5 字/秒）/ 英文 kokoro-82m `am_liam`；也可用你自己的 TTS 或成品配音 |
 
 时长决定内容丰富程度与全流程规模：
 
@@ -161,7 +161,7 @@ cd ~/work/my-video
 可以。把成品音频放到 `public/assets/<slug>/audio.wav`，按 `tts_build.py` 文件头的格式手填 `src/common/timeline.ts` 和 `subs.ts`，后续流程不变。
 
 **能换视觉风格吗？**
-只做这一种风格，是有意为之，唯一的开关是幕底：`src/config.ts` 的 `bg`（默认 `'dots'` 点阵波，可选 `'stars'` 星点雾底）。其他要换就改 `reference/style-guide.md` 和 `src/ui.tsx`，镜头代码只用这些图元。
+可以，一共五套，是选不是改：未来科技数据大屏（`dashboard`）、AI 搜索引用链路（`citation`）、企业增长故事（`growth`）、SEO 与 GEO 对比（`compare`）、极简动态图形（`cards`）。写 `src/config.ts` 的 `style` 就换一整套——底色、调色板、字体、圆角与描边、光的形态、覆盖层配色、素材来源一起换。每套的规格在 `reference/styles/<n>-<id>.md`，全风格恒定的规则在 `reference/common-rules.md`。镜头代码只引用语义令牌（`PRIMARY` / `PANEL` / `GLOW_HERO`…），不写色值，所以换套不用改镜头。声音是另一个独立选择（`config.voice`），换画面不必重跑配音。
 
 **渲染结果可复现吗？**
 可以。所有动画都是帧号的纯函数，随机数带种子，文字排版靠计算而不测 DOM，重渲一遍帧完全一样。
@@ -178,11 +178,17 @@ cd ~/work/my-video
 ## 仓库结构
 
 ```
-SKILL.md                  流程主文档：9 个阶段、四个确认点、质量标尺
+SKILL.md                  流程主文档：8 个阶段、风格/声音两个选择点、质量标尺
 reference/                写给主会话与 agent 的规范
-  style-guide.md            安全区、调色板、字体、图元目录、版式规律
+  common-rules.md           公共规则（全风格恒定）：画布与帧号、时长换算、尺寸三档、光跟主角、高光时刻上限、持续动作与停留、动效帧数、安全区、镜头与节拍、章界
+  styles/00-index.md        五套风格的索引：分工、公共 vs 风格的划分判据、8 槽速查、预选顺序
+  styles/01-dashboard.md    ① 未来科技数据大屏（默认套，生图）
+  styles/02-citation.md     ② AI 搜索引用链路（全代码）
+  styles/03-growth.md       ③ 企业增长故事（免版权实拍）
+  styles/04-compare.md      ④ SEO 与 GEO 对比（浅底分屏）
+  styles/05-cards.md        ⑤ 极简动态图形（浅底实色块）
   motion-vocabulary.md      入场/强调/光效/离场/运镜的公式与帧数
-  composition-and-light.md  主体尺寸三档、光跟主角、高光时刻编排、量化判据
+  narration-guidance.md     口播文案 13 条写作原则 + 起飞前检查表
   narration-storyboard.md   解说词写法、配音参数、分镜令牌、镜头设计模式表
   research-brief.md         研究员 prompt 与事实规则
   agent-build-rules.md      构建 agent 协议
@@ -190,13 +196,16 @@ reference/                写给主会话与 agent 的规范
   prompts.md                研究/构建/QC/修复/复验/终检六种 prompt 模板
   lessons.md                三部片子踩过的坑与根因
 template/                 可编译的 Remotion 4 项目（用 scripts/new_project.sh 复制）
-  src/common/               雾底、星点、点阵波、glitch、缓动、字幕、进度条、实拍层
-  src/ui.tsx  src/fx.tsx    图元与调色板 / 光效·纵深·运镜图元
+  src/styles.ts             五套风格的 8 槽令牌（唯一视觉真相源）
+  src/theme.ts              派生层：TOKENS → PRIMARY/PANEL/IS_LIGHT/GLOW_* 等语义令牌
+  src/styles-voices.ts      五只 edge 音色 + 预选
+  src/common/               幕底、点阵、星点、雾、glitch、缓动、字幕、进度条、实拍层
+  src/ui.tsx  src/fx.tsx    图元 / 光效·纵深·运镜图元（色值全部从 theme 派生）
   src/overlay/              片头、章节卡、HUD、流程轨、片尾
   scripts/                  配音、分镜、still、测渲、前 N 秒样片、整片渲染、量化质检
   public/fonts/             四款字体 + OFL 许可
-examples/rag/             样片全套过程文件与成片帧
-examples/contrast/        6 组正例/反例帧对照（构图与光的标尺）
+examples/rag/             样片全套过程文件与成片帧（第 1 套的质量与风格标尺）
+examples/contrast/        6 组正例/反例帧对照（构图与光，与风格无关）
 ```
 
 ## 致谢
@@ -216,8 +225,9 @@ Remotion 自身对公司用户另有授权要求，见 [remotion.dev/license](ht
 
 ## 已知限制
 
-- 中英文都支持（`lang: 'zh' | 'en'`），各有自己的语速、字幕块预算（每块 16 字 / 48 字符）与默认音色。两版成片都嵌在上方；`examples/rag/` 的过程文件是中文版的。只做这一种视觉风格，幕底二选一（`bg: 'stars' | 'dots'`），其他要换就改 `reference/style-guide.md` + `src/ui.tsx`。
-- 不适用：复刻某条现有视频、真人口播、以实拍为主的片子。
+- 中英文都支持（`lang: 'zh' | 'en'`），各有自己的语速、字幕块预算（每块 16 字 / 48 字符）与默认音色。两版成片都嵌在上方；`examples/rag/` 的过程文件是中文版的。五套视觉风格写在 `src/config.ts` 的 `style`，规格在 `reference/styles/<n>-<id>.md`；换套要换的只有 `config.style` 和已画镜头的语义令牌引用。
+- **五套风格各需实拍验证**：目前只有第 1 套（dashboard）有完整样片做标尺；第 2–5 套的规格已落进代码且静态检查通过，但**浅底两套（compare / cards）的字幕反转、面板反白、进度条转深还没在真实成片上验证过**，首次使用时请先渲 30 秒样片确认，再派全片。
+- 不适用：复刻某条现有视频、真人口播、以实拍为主的片子（第 3 套只把实拍当背景）。
 - 解说词一旦配音定稿就不能改词（镜头代码里硬编码帧号），改词等于全片重对位。
 - 并行构建对机器有要求：多个 agent 同时跑 Remotion bundle，建议预留 ≥5GB 磁盘；tmux pane 有上限，超过 12 个要分波派。
 
